@@ -211,6 +211,8 @@
             <div class="progress-fill" :style="{ width: '0%' }"></div>
           </div>
         </div>
+      </div>
+      </div>
         </details>
 
         <div class="logout-section">
