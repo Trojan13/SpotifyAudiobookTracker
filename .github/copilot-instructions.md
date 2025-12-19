@@ -11,8 +11,8 @@ Netlify-hosted Nuxt 3 application for tracking Spotify audiobook progress.
 - TypeScript support
 
 ## Spotify App Configuration
-- Client ID: your_spotify_client_id
-- Client Secret: your_spotify_client_secret
+- Client ID: (stored in .env)
+- Client Secret: (stored in .env)
 - Redirect URI (Dev): http://127.0.0.1:8000/callback
 - Required Scopes: user-read-recently-played, user-read-playback-state
 

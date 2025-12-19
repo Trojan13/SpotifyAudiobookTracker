@@ -39,8 +39,8 @@ npm install
 2. **Configure Spotify App**
 
 Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) and:
-- Use Client ID: `your_spotify_client_id`
-- Use Client Secret: `your_spotify_client_secret`
+- Create a new app or use existing
+- Note your Client ID and Client Secret
 - Add redirect URI: `http://127.0.0.1:3000/callback`
 
 3. **Run Development Server**
