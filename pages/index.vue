@@ -21,28 +21,6 @@
     </div>
 
     <div v-else>
-      <div class="filters">
-        <button 
-          :class="['filter-btn', { active: filter === 'all' }]"
-          @click="filter = 'all'; viewMode = 'list'"
-        >
-          All Tracks ({{ stats.total || 0 }})
-        </button>
-        <button 
-          :class="['filter-btn', { active: filter === 'audiobooks' && viewMode === 'list' }]"
-          @click="filter = 'audiobooks'; viewMode = 'list'"
-        >
-          Audiobooks ({{ stats.audiobooks || 0 }})
-        </button>
-        <button 
-          :class="['filter-btn', { active: viewMode === 'grouped' }]"
-          @click="filter = 'audiobooks'; viewMode = 'grouped'"
-        >
-          Grouped ({{ stats.uniqueAudiobooks || 0 }})
-        </button>
-        <button class="btn-secondary btn" @click="logout">Logout</button>
-      </div>
-
       <div v-if="premiumRequired" class="error">
         <h2>Spotify Premium Required</h2>
         <p>This app requires Spotify Premium to access your recently played tracks.</p>
@@ -50,23 +28,122 @@
       </div>
 
       <div v-if="loading" class="loading">
-        Loading your recent tracks...
+        Loading your audiobook progress...
       </div>
 
       <div v-else-if="error" class="error">
         {{ error }}
       </div>
 
-      <div v-else-if="filteredTracks.length === 0 && viewMode === 'list'" class="empty-state">
-        <h2>No tracks found</h2>
-        <p>Start listening to audiobooks on Spotify!</p>
-      </div>
+      <div v-else>
+        <div v-if="currentAudiobook" class="current-audiobook">
+          <h2>Currently Playing</h2>
+          <div class="audiobook-card-large">
+            <img 
+              v-if="currentAudiobook.track.album?.images?.[0]?.url" 
+              :src="currentAudiobook.track.album.images[0].url" 
+              :alt="currentAudiobook.track.name"
+              class="audiobook-cover"
+            >
+            <div v-else class="audiobook-cover"></div>
+            
+            <div class="audiobook-info">
+              <h3>{{ currentAudiobook.track.name }}</h3>
+              <p class="author">{{ getArtists(currentAudiobook.track) }}</p>
+              <p class="album">{{ currentAudiobook.track.album?.name }}</p>
+              
+              <div v-if="currentAudiobook.progressMs" class="playback-progress">
+                <div class="progress-bar">
+                  <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
+                </div>
+                <div class="progress-time">
+                  {{ formatDuration(currentAudiobook.progressMs) }} / {{ formatDuration(currentAudiobook.track.duration_ms) }}
+                </div>
+              </div>
 
-      <div v-else-if="viewMode === 'grouped'">
-        <div v-if="groupedAudiobooks.length === 0" class="empty-state">
-          <h2>No audiobooks found</h2>
-          <p>Start listening to audiobooks on Spotify!</p>
+              <div class="audiobook-actions">
+                <a :href="currentAudiobook.track.external_urls?.spotify" target="_blank" class="btn btn-primary">
+                  {{ currentAudiobook.isPlaying ? 'Playing Now' : 'Continue Listening' }}
+                </a>
+                <span class="badge audiobook">{{ Math.round(currentAudiobook.confidence) }}% Audiobook Confidence</span>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <div v-else-if="lastAudiobook" class="current-audiobook">
+          <h2>Last Played Audiobook</h2>
+          <div class="audiobook-card-large">
+            <img 
+              v-if="lastAudiobook.track.album?.images?.[0]?.url" 
+              :src="lastAudiobook.track.album.images[0].url" 
+              :alt="lastAudiobook.track.name"
+              class="audiobook-cover"
+            >
+            <div v-else class="audiobook-cover"></div>
+            
+            <div class="audiobook-info">
+              <h3>{{ lastAudiobook.track.name }}</h3>
+              <p class="author">{{ getArtists(lastAudiobook.track) }}</p>
+              <p class="album">{{ lastAudiobook.track.album?.name }}</p>
+              <p class="last-played">Last played {{ formatDate(lastAudiobook.played_at) }}</p>
+
+              <div class="audiobook-actions">
+                <a :href="lastAudiobook.track.external_urls?.spotify" target="_blank" class="btn btn-primary">
+                  Continue Listening
+                </a>
+                <span class="badge audiobook">{{ Math.round(lastAudiobook.audiobookConfidence) }}% Audiobook Confidence</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <details class="history-section">
+          <summary>
+            <h2>Listening History</h2>
+          </summary>
+
+          <div class="history-controls">
+            <div class="filters">
+              <button 
+                :class="['filter-btn', { active: filter === 'all' }]"
+                @click="filter = 'all'; viewMode = 'list'"
+              >
+                All Tracks ({{ stats.total || 0 }})
+              </button>
+              <button 
+                :class="['filter-btn', { active: filter === 'audiobooks' && viewMode === 'list' }]"
+                @click="filter = 'audiobooks'; viewMode = 'list'"
+              >
+                Audiobooks ({{ stats.audiobooks || 0 }})
+              </button>
+              <button 
+                :class="['filter-btn', { active: viewMode === 'grouped' }]"
+                @click="filter = 'audiobooks'; viewMode = 'grouped'"
+              >
+                Grouped ({{ stats.uniqueAudiobooks || 0 }})
+              </button>
+            </div>
+
+            <div class="limit-selector">
+              <label>Tracks to load:</label>
+              <select v-model="trackLimit" @change="fetchRecentTracks">
+                <option :value="10">10</option>
+                <option :value="20">20</option>
+                <option :value="30">30</option>
+                <option :value="50">50</option>
+              </select>
+            </div>
+          </div>
+
+          <div v-if="filteredTracks.length === 0 && viewMode === 'list'" class="empty-state">
+            <p>No tracks found</p>
+          </div>
+
+          <div v-else-if="viewMode === 'grouped'">
+            <div v-if="groupedAudiobooks.length === 0" class="empty-state">
+              <p>No audiobooks found</p>
+            </div>
 
         <div v-for="group in groupedAudiobooks" :key="group.id" class="audiobook-group">
           <div class="track-header">
@@ -134,6 +211,11 @@
             <div class="progress-fill" :style="{ width: '0%' }"></div>
           </div>
         </div>
+        </details>
+
+        <div class="logout-section">
+          <button class="btn-secondary btn" @click="logout">Logout</button>
+        </div>
       </div>
     </div>
   </div>
@@ -148,14 +230,22 @@ const loading = ref(false)
 const error = ref('')
 const sessionExpired = ref(false)
 const premiumRequired = ref(false)
+const currentAudiobook = ref<any>(null)
+const lastAudiobook = ref<any>(null)
 const tracks = ref<any[]>([])
 const groupedAudiobooks = ref<any[]>([])
 const stats = ref<any>({})
+const trackLimit = ref(20)
 const filter = ref('all')
-const viewMode = ref('list') // 'list' or 'grouped'
+const viewMode = ref('list')
+
+const progressPercent = computed(() => {
+  if (!currentAudiobook.value?.progressMs || !currentAudiobook.value?.track?.duration_ms) return 0
+  return (currentAudiobook.value.progressMs / currentAudiobook.value.track.duration_ms) * 100
+})
 
 const loginUrl = computed(() => {
-  const scopes = 'user-read-recently-played user-read-playback-state'
+  const scopes = 'user-read-recently-played user-read-playback-state user-read-currently-playing'
   const params = new URLSearchParams({
     client_id: config.public.spotifyClientId,
     response_type: 'code',
@@ -176,6 +266,12 @@ const getArtists = (track: any) => {
   return track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist'
 }
 
+const formatDuration = (ms: number) => {
+  const minutes = Math.floor(ms / 60000)
+  const seconds = Math.floor((ms % 60000) / 1000)
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
 const formatDate = (dateString: string) => {
   const date = new Date(dateString)
   const now = new Date()
@@ -194,12 +290,23 @@ const fetchRecentTracks = async () => {
   premiumRequired.value = false
   
   try {
-    const response = await $fetch('/api/recent-tracks')
+    const response = await $fetch(`/api/recent-tracks?limit=${trackLimit.value}`)
     
     if (response && response.premiumRequired === true) {
       premiumRequired.value = true
       isLoggedIn.value = false
       return
+    }
+    
+    if (response.currentlyPlaying && response.currentlyPlaying.isAudiobook) {
+      currentAudiobook.value = response.currentlyPlaying
+    } else {
+      currentAudiobook.value = null
+    }
+    
+    const audiobooks = response.items?.filter((item: any) => item.isAudiobook) || []
+    if (audiobooks.length > 0) {
+      lastAudiobook.value = audiobooks[0]
     }
     
     tracks.value = response.items || []

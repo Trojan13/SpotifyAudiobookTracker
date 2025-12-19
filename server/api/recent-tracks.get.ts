@@ -113,6 +113,8 @@ function detectAudiobook(item: any): { isAudiobook: boolean; confidence: number;
 
 export default defineEventHandler(async (event) => {
   const accessToken = getCookie(event, 'spotify_access_token')
+  const query = getQuery(event)
+  const limit = Math.min(parseInt(query.limit as string) || 50, 50)
 
   if (!accessToken) {
     throw createError({
@@ -126,24 +128,54 @@ export default defineEventHandler(async (event) => {
       headers: {
         'Authorization': `Bearer ${accessToken}`
       }
+    }).catch((e) => {
+      if (e.statusCode === 401) throw e
+      return null
     })
 
-    const userProduct = (userProfile as any).product
-    
-    if (userProduct === 'free') {
-      return {
-        premiumRequired: true,
-        product: userProduct
+    if (userProfile) {
+      const userProduct = (userProfile as any).product
+      
+      if (userProduct === 'free') {
+        return {
+          premiumRequired: true,
+          product: userProduct,
+          items: [],
+          grouped: [],
+          stats: {}
+        }
       }
     }
 
-    const recentTracksData = await $fetch('https://api.spotify.com/v1/me/player/recently-played?limit=50', {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
-    })
+    const [recentTracksData, currentPlayback] = await Promise.allSettled([
+      $fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=${limit}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      }),
+      $fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      })
+    ])
 
     const items = (recentTracksData as any).items || []
+
+    let currentlyPlaying = null
+    if (currentPlayback.status === 'fulfilled' && currentPlayback.value) {
+      const current = currentPlayback.value as any
+      if (current.item) {
+        const detection = detectAudiobook({ track: current.item, played_at: new Date().toISOString() })
+        currentlyPlaying = {
+          track: current.item,
+          isPlaying: current.is_playing,
+          progressMs: current.progress_ms,
+          isAudiobook: detection.isAudiobook,
+          confidence: detection.confidence
+        }
+      }
+    }
 
     const processedItems = items.map((item: any) => {
       const detection = detectAudiobook(item);
@@ -202,6 +234,7 @@ export default defineEventHandler(async (event) => {
     );
 
     return {
+      currentlyPlaying,
       items: processedItems,
       grouped: groupedArray,
       stats: {
