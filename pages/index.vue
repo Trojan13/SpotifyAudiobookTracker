@@ -212,7 +212,6 @@
           </div>
         </div>
       </div>
-      </div>
         </details>
 
         <div class="logout-section">
@@ -291,6 +290,8 @@ const fetchRecentTracks = async () => {
   sessionExpired.value = false
   premiumRequired.value = false
   
+  const hadSession = document.cookie.includes('spotify_access_token')
+  
   try {
     const response = await $fetch(`/api/recent-tracks?limit=${trackLimit.value}`)
     
@@ -317,8 +318,10 @@ const fetchRecentTracks = async () => {
   } catch (e: any) {
     if (e.statusCode === 401) {
       isLoggedIn.value = false
-      sessionExpired.value = true
-      error.value = 'Your session has expired. Please log in again.'
+      if (hadSession) {
+        sessionExpired.value = true
+        error.value = 'Your session has expired. Please log in again.'
+      }
       document.cookie = 'spotify_access_token=; Max-Age=0; path=/'
     } else {
       error.value = e.message || 'Failed to fetch tracks'
@@ -336,13 +339,13 @@ const logout = () => {
 }
 
 onMounted(async () => {
-  // Try to fetch tracks - if we get a 401, we're not logged in
   try {
     await fetchRecentTracks();
     isLoggedIn.value = true;
   } catch (e: any) {
     if (e.statusCode === 401) {
       isLoggedIn.value = false;
+      sessionExpired.value = false;
     }
   }
 })
