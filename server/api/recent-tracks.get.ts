@@ -130,7 +130,7 @@ export default defineEventHandler(async (event) => {
 
     const userProduct = (userProfile as any).product
     
-    if (userProduct !== 'premium') {
+    if (userProduct === 'free') {
       return {
         premiumRequired: true,
         product: userProduct

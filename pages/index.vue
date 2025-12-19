@@ -196,7 +196,7 @@ const fetchRecentTracks = async () => {
   try {
     const response = await $fetch('/api/recent-tracks')
     
-    if (response.premiumRequired) {
+    if (response && response.premiumRequired === true) {
       premiumRequired.value = true
       isLoggedIn.value = false
       return
