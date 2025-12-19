@@ -160,7 +160,7 @@ export default defineEventHandler(async (event) => {
       })
     ])
 
-    const items = (recentTracksData as any).items || []
+    const items = (recentTracksData.status === 'fulfilled' ? recentTracksData.value : { items: [] }).items || []
 
     let currentlyPlaying = null
     if (currentPlayback.status === 'fulfilled' && currentPlayback.value) {

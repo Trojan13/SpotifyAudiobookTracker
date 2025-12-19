@@ -36,43 +36,8 @@
       </div>
 
       <div v-else>
-        <div v-if="currentAudiobook" class="current-audiobook">
-          <h2>Currently Playing</h2>
-          <div class="audiobook-card-large">
-            <img 
-              v-if="currentAudiobook.track.album?.images?.[0]?.url" 
-              :src="currentAudiobook.track.album.images[0].url" 
-              :alt="currentAudiobook.track.name"
-              class="audiobook-cover"
-            >
-            <div v-else class="audiobook-cover"></div>
-            
-            <div class="audiobook-info">
-              <h3>{{ currentAudiobook.track.name }}</h3>
-              <p class="author">{{ getArtists(currentAudiobook.track) }}</p>
-              <p class="album">{{ currentAudiobook.track.album?.name }}</p>
-              
-              <div v-if="currentAudiobook.progressMs" class="playback-progress">
-                <div class="progress-bar">
-                  <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
-                </div>
-                <div class="progress-time">
-                  {{ formatDuration(currentAudiobook.progressMs) }} / {{ formatDuration(currentAudiobook.track.duration_ms) }}
-                </div>
-              </div>
-
-              <div class="audiobook-actions">
-                <a :href="currentAudiobook.track.external_urls?.spotify" target="_blank" class="btn btn-primary">
-                  {{ currentAudiobook.isPlaying ? 'Playing Now' : 'Continue Listening' }}
-                </a>
-                <span class="badge audiobook">{{ Math.round(currentAudiobook.confidence) }}% Audiobook Confidence</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div v-else-if="lastAudiobook" class="current-audiobook">
-          <h2>Last Played Audiobook</h2>
+        <div v-if="lastAudiobook" class="current-audiobook">
+          <h2>Continue Your Audiobook</h2>
           <div class="audiobook-card-large">
             <img 
               v-if="lastAudiobook.track.album?.images?.[0]?.url" 
@@ -92,7 +57,36 @@
                 <a :href="lastAudiobook.track.external_urls?.spotify" target="_blank" class="btn btn-primary">
                   Continue Listening
                 </a>
-                <span class="badge audiobook">{{ Math.round(lastAudiobook.audiobookConfidence) }}% Audiobook Confidence</span>
+                <span class="badge audiobook">{{ Math.round(lastAudiobook.audiobookConfidence) }}% confidence</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="currentAudiobook && currentAudiobook.isPlaying" class="now-playing-badge">
+          <h3>Now Playing</h3>
+          <div class="track-card">
+            <div class="track-header">
+              <img 
+                v-if="currentAudiobook.track.album?.images?.[0]?.url" 
+                :src="currentAudiobook.track.album.images[0].url" 
+                :alt="currentAudiobook.track.name"
+                class="track-image"
+              >
+              <div v-else class="track-image"></div>
+              
+              <div class="track-info">
+                <div class="track-title">{{ currentAudiobook.track.name }}</div>
+                <div class="track-author">{{ getArtists(currentAudiobook.track) }}</div>
+                
+                <div v-if="currentAudiobook.progressMs" class="playback-progress">
+                  <div class="progress-bar">
+                    <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
+                  </div>
+                  <div class="progress-time">
+                    {{ formatDuration(currentAudiobook.progressMs) }} / {{ formatDuration(currentAudiobook.track.duration_ms) }}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
