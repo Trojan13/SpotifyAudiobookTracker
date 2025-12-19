@@ -17,16 +17,11 @@
         <p>Connect your Spotify account to start tracking your audiobooks</p>
         <br>
         <a :href="loginUrl" class="btn">Connect Spotify</a>
+        <p class="premium-note">Spotify Premium required</p>
       </div>
     </div>
 
     <div v-else>
-      <div v-if="premiumRequired" class="error">
-        <h2>Spotify Premium Required</h2>
-        <p>This app requires Spotify Premium to access your recently played tracks.</p>
-        <p>Please upgrade your account at <a href="https://www.spotify.com/premium/" target="_blank" style="color: #1db954;">spotify.com/premium</a></p>
-      </div>
-
       <div v-if="loading" class="loading">
         Loading your audiobook progress...
       </div>
@@ -224,7 +219,6 @@ const isLoggedIn = ref(false)
 const loading = ref(false)
 const error = ref('')
 const sessionExpired = ref(false)
-const premiumRequired = ref(false)
 const currentAudiobook = ref<any>(null)
 const lastAudiobook = ref<any>(null)
 const tracks = ref<any[]>([])
@@ -282,18 +276,11 @@ const fetchRecentTracks = async () => {
   loading.value = true
   error.value = ''
   sessionExpired.value = false
-  premiumRequired.value = false
   
   const hadSession = document.cookie.includes('spotify_access_token')
   
   try {
-    const response = await $fetch(`/api/recent-tracks?limit=${trackLimit.value}`)
-    
-    if (response && response.premiumRequired === true) {
-      premiumRequired.value = true
-      isLoggedIn.value = false
-      return
-    }
+    const response = await $fetch(`/api/recent-tracks?limit=${trackLimit.value}`) as any
     
     if (response.currentlyPlaying && response.currentlyPlaying.isAudiobook) {
       currentAudiobook.value = response.currentlyPlaying

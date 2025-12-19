@@ -124,29 +124,9 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const userProfile = await $fetch('https://api.spotify.com/v1/me', {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
-    }).catch((e) => {
-      if (e.statusCode === 401) throw e
-      return null
-    })
-
-    if (userProfile) {
-      const userProduct = (userProfile as any).product
-      
-      if (userProduct === 'free') {
-        return {
-          premiumRequired: true,
-          product: userProduct,
-          items: [],
-          grouped: [],
-          stats: {}
-        }
-      }
-    }
-
+    // Premium check is now done during OAuth callback
+    // If user reaches here, they have already been verified to have premium
+    
     const [recentTracksData, currentPlayback] = await Promise.allSettled([
       $fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=${limit}`, {
         headers: {

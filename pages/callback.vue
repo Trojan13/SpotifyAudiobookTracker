@@ -34,8 +34,15 @@ onMounted(async () => {
     const response = await $fetch('/api/auth/callback', {
       method: 'POST',
       body: { code }
-    });
+    }) as any;
     console.log('[CALLBACK] Response:', response);
+    
+    // Check if premium is required
+    if (response.premiumRequired) {
+      console.log('[CALLBACK] Premium required, redirecting');
+      await navigateTo('/premium-required');
+      return;
+    }
     
     await new Promise(resolve => setTimeout(resolve, 500));
     

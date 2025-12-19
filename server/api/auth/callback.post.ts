@@ -33,6 +33,27 @@ export default defineEventHandler(async (event) => {
 
     const accessToken = (tokenResponse as any).access_token;
 
+    // Check if user has premium before setting cookie
+    try {
+      const userProfile = await $fetch('https://api.spotify.com/v1/me', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+
+      const userProduct = (userProfile as any).product;
+      
+      if (userProduct === 'free') {
+        return { 
+          success: false, 
+          premiumRequired: true 
+        };
+      }
+    } catch (profileError) {
+      console.error('[SERVER] Failed to fetch user profile:', profileError);
+      // Continue with auth even if profile check fails
+    }
+
     setCookie(event, 'spotify_access_token', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
