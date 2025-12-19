@@ -9,3 +9,10 @@
 
 [build.environment]
   NODE_VERSION = "20.19.0"
+
+[build.processing]
+  skip_processing = false
+
+[build.processing.secrets]
+  enabled = true
+  omit_paths = [".netlify/functions-internal/**"]
