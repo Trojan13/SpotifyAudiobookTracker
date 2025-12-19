@@ -122,6 +122,21 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
+    const userProfile = await $fetch('https://api.spotify.com/v1/me', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    })
+
+    const userProduct = (userProfile as any).product
+    
+    if (userProduct !== 'premium') {
+      return {
+        premiumRequired: true,
+        product: userProduct
+      }
+    }
+
     const recentTracksData = await $fetch('https://api.spotify.com/v1/me/player/recently-played?limit=50', {
       headers: {
         'Authorization': `Bearer ${accessToken}`

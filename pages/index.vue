@@ -43,6 +43,12 @@
         <button class="btn-secondary btn" @click="logout">Logout</button>
       </div>
 
+      <div v-if="premiumRequired" class="error">
+        <h2>Spotify Premium Required</h2>
+        <p>This app requires Spotify Premium to access your recently played tracks.</p>
+        <p>Please upgrade your account at <a href="https://www.spotify.com/premium/" target="_blank" style="color: #1db954;">spotify.com/premium</a></p>
+      </div>
+
       <div v-if="loading" class="loading">
         Loading your recent tracks...
       </div>
@@ -141,6 +147,7 @@ const isLoggedIn = ref(false)
 const loading = ref(false)
 const error = ref('')
 const sessionExpired = ref(false)
+const premiumRequired = ref(false)
 const tracks = ref<any[]>([])
 const groupedAudiobooks = ref<any[]>([])
 const stats = ref<any>({})
@@ -184,9 +191,17 @@ const fetchRecentTracks = async () => {
   loading.value = true
   error.value = ''
   sessionExpired.value = false
+  premiumRequired.value = false
   
   try {
     const response = await $fetch('/api/recent-tracks')
+    
+    if (response.premiumRequired) {
+      premiumRequired.value = true
+      isLoggedIn.value = false
+      return
+    }
+    
     tracks.value = response.items || []
     groupedAudiobooks.value = response.grouped || []
     stats.value = response.stats || {}
@@ -195,7 +210,6 @@ const fetchRecentTracks = async () => {
       isLoggedIn.value = false
       sessionExpired.value = true
       error.value = 'Your session has expired. Please log in again.'
-      // Clear any stale cookies
       document.cookie = 'spotify_access_token=; Max-Age=0; path=/'
     } else {
       error.value = e.message || 'Failed to fetch tracks'

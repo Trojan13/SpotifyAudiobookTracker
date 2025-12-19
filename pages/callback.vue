@@ -37,6 +37,8 @@ onMounted(async () => {
     });
     console.log('[CALLBACK] Response:', response);
     
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     console.log('[CALLBACK] Redirecting to home page');
     await navigateTo('/');
   } catch (e: any) {
