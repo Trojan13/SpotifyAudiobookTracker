@@ -63,6 +63,14 @@ export default defineEventHandler(async (event) => {
       path: '/'
     });
 
+    // Set a separate cookie that JavaScript can read to check login state
+    setCookie(event, 'spotify_logged_in', 'true', {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 3600,
+      path: '/'
+    });
+
     console.log('[SERVER] Premium user authenticated successfully');
     return { success: true }
   } catch (error: any) {

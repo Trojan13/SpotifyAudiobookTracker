@@ -277,7 +277,7 @@ const fetchRecentTracks = async () => {
   error.value = ''
   sessionExpired.value = false
   
-  const hadSession = document.cookie.includes('spotify_access_token')
+  const hadSession = document.cookie.includes('spotify_logged_in=true')
   
   try {
     const response = await $fetch(`/api/recent-tracks?limit=${trackLimit.value}`) as any
@@ -304,6 +304,7 @@ const fetchRecentTracks = async () => {
         error.value = 'Your session has expired. Please log in again.'
       }
       document.cookie = 'spotify_access_token=; Max-Age=0; path=/'
+      document.cookie = 'spotify_logged_in=; Max-Age=0; path=/'
     } else {
       error.value = e.message || 'Failed to fetch tracks'
     }
@@ -313,15 +314,16 @@ const fetchRecentTracks = async () => {
 }
 
 const logout = () => {
-  // Clear the session cookie
+  // Clear the session cookies
   document.cookie = 'spotify_access_token=; Max-Age=0; path=/'
+  document.cookie = 'spotify_logged_in=; Max-Age=0; path=/'
   isLoggedIn.value = false
   tracks.value = []
 }
 
 onMounted(async () => {
-  // Check if user has a valid session cookie
-  const hasSessionCookie = document.cookie.includes('spotify_access_token')
+  // Check if user has a valid session cookie (check the readable cookie)
+  const hasSessionCookie = document.cookie.includes('spotify_logged_in=true')
   
   if (!hasSessionCookie) {
     isLoggedIn.value = false
@@ -338,6 +340,7 @@ onMounted(async () => {
       isLoggedIn.value = false
       sessionExpired.value = true
       document.cookie = 'spotify_access_token=; Max-Age=0; path=/'
+      document.cookie = 'spotify_logged_in=; Max-Age=0; path=/'
     } else {
       isLoggedIn.value = false
     }
