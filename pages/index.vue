@@ -299,7 +299,7 @@ const fetchRecentTracks = async () => {
   } catch (e: any) {
     if (e.statusCode === 401) {
       isLoggedIn.value = false
-      if (hadSession) {
+      if (hadSession && isLoggedIn.value) {
         sessionExpired.value = true
         error.value = 'Your session has expired. Please log in again.'
       }
@@ -320,13 +320,26 @@ const logout = () => {
 }
 
 onMounted(async () => {
+  // Check if user has a valid session cookie
+  const hasSessionCookie = document.cookie.includes('spotify_access_token')
+  
+  if (!hasSessionCookie) {
+    isLoggedIn.value = false
+    return
+  }
+  
+  // If cookie exists, try to fetch data
   try {
-    await fetchRecentTracks();
-    isLoggedIn.value = true;
+    await fetchRecentTracks()
+    isLoggedIn.value = true
   } catch (e: any) {
+    // If fetch fails with 401, session is expired
     if (e.statusCode === 401) {
-      isLoggedIn.value = false;
-      sessionExpired.value = false;
+      isLoggedIn.value = false
+      sessionExpired.value = true
+      document.cookie = 'spotify_access_token=; Max-Age=0; path=/'
+    } else {
+      isLoggedIn.value = false
     }
   }
 })

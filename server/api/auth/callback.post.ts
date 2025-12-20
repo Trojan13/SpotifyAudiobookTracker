@@ -33,25 +33,27 @@ export default defineEventHandler(async (event) => {
 
     const accessToken = (tokenResponse as any).access_token;
 
-    // Check if user has premium before setting cookie
-    try {
-      const userProfile = await $fetch('https://api.spotify.com/v1/me', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
-        }
-      });
-
-      const userProduct = (userProfile as any).product;
-      
-      if (userProduct === 'free') {
-        return { 
-          success: false, 
-          premiumRequired: true 
-        };
+    const userProfile = await $fetch('https://api.spotify.com/v1/me', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
       }
-    } catch (profileError) {
-      console.error('[SERVER] Failed to fetch user profile:', profileError);
-      // Continue with auth even if profile check fails
+    }).catch((err) => {
+      console.error('[SERVER] Failed to fetch user profile:', err);
+      throw createError({
+        statusCode: 500,
+        message: 'Failed to verify user account'
+      });
+    });
+
+    const userProduct = (userProfile as any).product;
+    console.log('[SERVER] User product type:', userProduct);
+    
+    if (userProduct === 'free') {
+      console.log('[SERVER] User is free tier, denying access');
+      return { 
+        success: false, 
+        premiumRequired: true 
+      };
     }
 
     setCookie(event, 'spotify_access_token', accessToken, {
@@ -61,6 +63,7 @@ export default defineEventHandler(async (event) => {
       path: '/'
     });
 
+    console.log('[SERVER] Premium user authenticated successfully');
     return { success: true }
   } catch (error: any) {
     console.error('[SERVER] Token exchange error:', error);

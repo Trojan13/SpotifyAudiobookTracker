@@ -37,21 +37,30 @@ onMounted(async () => {
     }) as any;
     console.log('[CALLBACK] Response:', response);
     
-    // Check if premium is required
-    if (response.premiumRequired) {
+    if (response && response.premiumRequired) {
       console.log('[CALLBACK] Premium required, redirecting');
       await navigateTo('/premium-required');
       return;
     }
     
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    console.log('[CALLBACK] Redirecting to home page');
-    await navigateTo('/');
+    if (response && response.success) {
+      console.log('[CALLBACK] Authentication successful, redirecting to home');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await navigateTo('/');
+    } else {
+      throw new Error('Invalid response from authentication server');
+    }
   } catch (e: any) {
     console.error('[CALLBACK] Error:', e);
     console.error('[CALLBACK] Error data:', e.data);
-    error.value = e.data?.message || e.message || 'Authentication failed. Please try again.';
+    
+    if (e.statusCode === 500) {
+      error.value = 'Failed to verify your Spotify account. Please try again.';
+    } else if (e.statusCode === 401) {
+      error.value = 'Authentication failed. The authorization code may have expired.';
+    } else {
+      error.value = e.data?.message || e.message || 'Authentication failed. Please try again.';
+    }
   }
 });
 </script>

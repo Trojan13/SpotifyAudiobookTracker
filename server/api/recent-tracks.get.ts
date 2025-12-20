@@ -124,9 +124,6 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // Premium check is now done during OAuth callback
-    // If user reaches here, they have already been verified to have premium
-    
     const [recentTracksData, currentPlayback] = await Promise.allSettled([
       $fetch(`https://api.spotify.com/v1/me/player/recently-played?limit=${limit}`, {
         headers: {
@@ -140,7 +137,7 @@ export default defineEventHandler(async (event) => {
       })
     ])
 
-    const items = (recentTracksData.status === 'fulfilled' ? recentTracksData.value : { items: [] }).items || []
+    const items = (recentTracksData.status === 'fulfilled' ? (recentTracksData.value as any) : { items: [] }).items || []
 
     let currentlyPlaying = null
     if (currentPlayback.status === 'fulfilled' && currentPlayback.value) {
