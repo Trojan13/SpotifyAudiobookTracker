@@ -1,7 +1,7 @@
-# AudioBookTrack - Nuxt 3 Spotify Audiobook Tracker
+# AudioResume - Continue Your Spotify Audiobooks
 
 ## Project Overview
-Netlify-hosted Nuxt 3 application for tracking Spotify audiobook progress.
+Netlify-hosted Nuxt 3 application for resuming and tracking Spotify audiobook progress with intelligent detection.
 
 ## Tech Stack
 - Nuxt 3.17.7 with Nitro 2.12.9

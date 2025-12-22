@@ -1,8 +1,8 @@
 <template>
   <div class="container">
     <div class="header">
-      <h1>AudioBookTrack</h1>
-      <p>Track your Spotify audiobook progress</p>
+      <h1>AudioResume</h1>
+      <p>Resume your Spotify audiobooks seamlessly</p>
     </div>
     
     <div class="premium-required-page">

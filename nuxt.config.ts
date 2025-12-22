@@ -4,6 +4,12 @@ export default defineNuxtConfig({
   
   app: {
     buildAssetsDir: '/_nuxt/',
+    head: {
+      title: 'AudioResume - Continue Your Spotify Audiobooks',
+      meta: [
+        { name: 'description', content: 'Resume your Spotify audiobooks seamlessly with intelligent progress tracking' }
+      ]
+    }
   },
 
   experimental: {

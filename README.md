@@ -1,6 +1,6 @@
-# AudioBookTrack - Spotify Audiobook Progress Tracker
+# AudioResume - Continue Your Spotify Audiobooks
 
-A Nuxt 3 application for tracking your Spotify audiobook listening progress with intelligent detection and grouping.
+A sleek Nuxt 3 application that helps you seamlessly resume your Spotify audiobooks with intelligent detection and progress tracking.
 
 ## Features
 

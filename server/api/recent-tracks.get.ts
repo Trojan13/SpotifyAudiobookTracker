@@ -137,13 +137,20 @@ export default defineEventHandler(async (event) => {
       })
     ])
 
-    const items = (recentTracksData.status === 'fulfilled' ? (recentTracksData.value as any) : { items: [] }).items || []
+    console.log('[TRACKS] API calls completed');
+    console.log('[TRACKS] Recent tracks status:', recentTracksData.status);
+    console.log('[TRACKS] Current playback status:', currentPlayback.status);
+
+    const items = (recentTracksData.status === 'fulfilled' ? (recentTracksData.value as any).items : []) || []
+    console.log('[TRACKS] Retrieved', items.length, 'recent tracks');
 
     let currentlyPlaying = null
     if (currentPlayback.status === 'fulfilled' && currentPlayback.value) {
       const current = currentPlayback.value as any
       if (current.item) {
+        console.log('[TRACKS] Processing currently playing track:', current.item.name);
         const detection = detectAudiobook({ track: current.item, played_at: new Date().toISOString() })
+        console.log('[TRACKS] Currently playing detection:', { isAudiobook: detection.isAudiobook, confidence: detection.confidence });
         currentlyPlaying = {
           track: current.item,
           isPlaying: current.is_playing,
@@ -151,9 +158,14 @@ export default defineEventHandler(async (event) => {
           isAudiobook: detection.isAudiobook,
           confidence: detection.confidence
         }
+      } else {
+        console.log('[TRACKS] No item currently playing');
       }
+    } else {
+      console.log('[TRACKS] Current playback not available');
     }
 
+    console.log('[TRACKS] Processing', items.length, 'items for audiobook detection...');
     const processedItems = items.map((item: any) => {
       const detection = detectAudiobook(item);
       
@@ -180,6 +192,9 @@ export default defineEventHandler(async (event) => {
     });
 
     const audiobooks = processedItems.filter((item: any) => item.isAudiobook);
+    console.log('[TRACKS] Found', audiobooks.length, 'audiobooks out of', processedItems.length, 'total tracks');
+    
+    console.log('[TRACKS] Grouping audiobooks by album/show...');
     const groupedAudiobooks = audiobooks.reduce((acc: any, item: any) => {
       const groupId = item.groupId;
       if (!acc[groupId]) {
@@ -210,25 +225,37 @@ export default defineEventHandler(async (event) => {
       new Date(b.lastPlayed).getTime() - new Date(a.lastPlayed).getTime()
     );
 
+    const stats = {
+      total: processedItems.length,
+      audiobooks: audiobooks.length,
+      music: processedItems.length - audiobooks.length,
+      uniqueAudiobooks: groupedArray.length
+    };
+
+    console.log('[TRACKS] Response stats:', stats);
+    console.log('[TRACKS] Currently playing:', currentlyPlaying ? currentlyPlaying.track.name : 'None');
+    console.log('[TRACKS] Request completed successfully');
+
     return {
       currentlyPlaying,
       items: processedItems,
       grouped: groupedArray,
-      stats: {
-        total: processedItems.length,
-        audiobooks: audiobooks.length,
-        music: processedItems.length - audiobooks.length,
-        uniqueAudiobooks: groupedArray.length
-      }
+      stats
     }
   } catch (error: any) {
+    console.error('[TRACKS] Error occurred:', error);
+    console.error('[TRACKS] Error statusCode:', error.statusCode);
+    console.error('[TRACKS] Error message:', error.message);
+    
     if (error.statusCode === 401) {
+      console.error('[TRACKS] Unauthorized - session expired');
       throw createError({
         statusCode: 401,
         message: 'Session expired, please login again'
       })
     }
     
+    console.error('[TRACKS] Internal error:', error);
     throw createError({
       statusCode: 500,
       message: 'Failed to fetch recent tracks'

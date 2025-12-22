@@ -1,11 +1,16 @@
 <template>
   <div class="container">
     <div class="header">
-      <h1>AudioBookTrack</h1>
-      <p>Track your Spotify audiobook progress</p>
+      <h1>AudioResume</h1>
+      <p>Resume your Spotify audiobooks seamlessly</p>
     </div>
     
-    <div v-if="!isLoggedIn">
+    <!-- Show loading on initial mount -->
+    <div v-if="initializing" class="loading">
+      Loading...
+    </div>
+    
+    <div v-else-if="!isLoggedIn">
       <div v-if="sessionExpired" class="error">
         <h2>Session Expired</h2>
         <p>Your Spotify session has expired. Please reconnect to continue tracking your audiobooks.</p>
@@ -215,7 +220,16 @@
 const config = useRuntimeConfig()
 const route = useRoute()
 
-const isLoggedIn = ref(false)
+// Check cookie synchronously to prevent flash
+const hasSessionCookie = () => {
+  if (process.client) {
+    return document.cookie.includes('spotify_logged_in=true')
+  }
+  return false
+}
+
+const initializing = ref(true)
+const isLoggedIn = ref(hasSessionCookie())
 const loading = ref(false)
 const error = ref('')
 const sessionExpired = ref(false)
@@ -322,11 +336,14 @@ const logout = () => {
 }
 
 onMounted(async () => {
-  // Check if user has a valid session cookie (check the readable cookie)
-  const hasSessionCookie = document.cookie.includes('spotify_logged_in=true')
+  initializing.value = true
   
-  if (!hasSessionCookie) {
-    isLoggedIn.value = false
+  // Double-check cookie state (in case it changed)
+  const hasSession = document.cookie.includes('spotify_logged_in=true')
+  isLoggedIn.value = hasSession
+  
+  if (!hasSession) {
+    initializing.value = false
     return
   }
   
@@ -344,6 +361,8 @@ onMounted(async () => {
     } else {
       isLoggedIn.value = false
     }
+  } finally {
+    initializing.value = false
   }
 })
 </script>
